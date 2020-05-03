@@ -1,0 +1,72 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+- task: VisualStudioTestPlatformInstaller@1
+  displayName: 'Use MSTest Install Task'
+  inputs:
+    packageFeedSelector: 'nugetOrg'
+    versionSelector: 'latestStable'
+- task: UseDotNet@2
+  displayName: 'Use .NET Core sdk'
+  inputs:
+    packageType: sdk
+    version: 3.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+- task: NuGetCommand@2
+  displayName: 'Restore Nuget Package'
+  inputs:
+    command: 'restore'
+    restoreSolution: '**/*.sln'
+    feedsToUse: 'select'
+- task: VSBuild@1
+  displayName: 'Build with Visual Studio'
+  inputs:
+    solution: '**\*.sln'
+    configuration: 'Release'
+    maximumCpuCount: true
+- task: DotNetCoreCLI@2
+  displayName: 'rmnuget test task'
+  inputs:
+    command: 'test'
+    projects: '**/rmnugettest.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish artifacts'
+  inputs:
+      command: 'publish'
+      publishWebProjects: false
+      projects: '**/rmnuget.csproj'
+      arguments: '--output $(Build.ArtifactStagingDirectory) -r win-x64'
+      zipAfterPublish: false
+      modifyOutputPath: false
+- task: CopyFiles@2
+  displayName: 'Copy Artifact Staging Folder'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: '**/bin/**/rmnuget.exe'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: PublishSymbols@2
+  displayName: 'Publish Symbol'
+  inputs:
+    SearchPattern: '**/bin/**/*.pdb'
+    SymbolServerType: 'TeamServices'
+
+#- task: PublishTestResults@2
+#  displayName: 'Publish Test Result'
+#  inputs:
+#    testResultsFormat: 'VSTest'
+#    testResultsFiles: '**/TEST-*.xml'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
