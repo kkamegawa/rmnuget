@@ -14,7 +14,8 @@ namespace RemoveNuget
             List<string> targetFolderList = new List<string>();
 
 #pragma warning disable SecurityIntelliSenseCS // MS Security rules violation
-            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".nuget\packages");
+            var nugetFolder = Path.Combine(".nuget", "packages");
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), nugetFolder);
 #pragma warning restore SecurityIntelliSenseCS // MS Security rules violation
             var files = new System.IO.DirectoryInfo(folder);
             var direcories = files.GetDirectories();
